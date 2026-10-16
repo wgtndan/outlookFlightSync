@@ -139,6 +139,13 @@ struct ContentView: View {
                 Text("Your calendars.\nYour Mac. No sync server.").font(.caption).foregroundStyle(.secondary).lineSpacing(3)
                 Toggle("Open at login", isOn: Binding(get: { model.launchAtLogin }, set: { model.setLaunchAtLogin($0) }))
                     .font(.caption).disabled(model.isDemo)
+                Toggle("Show in Dock", isOn: Binding(get: { model.showInDock }, set: { model.setShowInDock($0) }))
+                    .font(.caption).disabled(model.isDemo)
+                    .help("Turn off to hide Calendar Sync from the Dock and Command-Tab. Its menu-bar icon stays available.")
+                if !model.showInDock {
+                    Text("Open this window from the Calendar Sync menu-bar icon.")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
                 if !model.isDemo {
                     Button("Try sample data") { model.enterDemo(); showingSummary = true }.font(.caption).buttonStyle(.link).disabled(model.isBusy)
                 }

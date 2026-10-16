@@ -27,8 +27,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var status = "Choose a rule to get started."
     @Published var errorMessage: String?
     @Published private(set) var launchAtLogin = false
+    @Published private(set) var showInDock = true
     @Published private(set) var pendingRecovery = false
 
+    private static let showInDockKey = "showInDock"
     private let access = CalendarAccess()
     private var store: StateStore?
     private var state = SavedState()
@@ -57,6 +59,13 @@ final class AppModel: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("--diagnose-sync") {
             runDiagnostics()
             return
+        }
+        let savedDockVisibility = UserDefaults.standard.object(forKey: Self.showInDockKey) as? Bool ?? true
+        if NSApplication.shared.setActivationPolicy(savedDockVisibility ? .regular : .accessory) {
+            showInDock = savedDockVisibility
+        } else {
+            showInDock = NSApplication.shared.activationPolicy() == .regular
+            errorMessage = "Could not restore the Dock setting. You can try changing Show in Dock again."
         }
         timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.runAutomatic() }
@@ -271,6 +280,24 @@ final class AppModel: ObservableObject {
                 recordFailure(rule: rule, error: error)
                 if pendingRecovery { break }
             }
+        }
+    }
+
+    func setShowInDock(_ visible: Bool) {
+        guard !isDemo else { return }
+        let app = NSApplication.shared
+        let window = app.keyWindow ?? app.mainWindow
+        guard app.setActivationPolicy(visible ? .regular : .accessory) else {
+            errorMessage = "Could not change Dock visibility. Please try again."
+            return
+        }
+        showInDock = visible
+        UserDefaults.standard.set(visible, forKey: Self.showInDockKey)
+        // Changing activation policy can deactivate the app. Keep the settings
+        // window usable while the user changes this preference.
+        if let window {
+            window.makeKeyAndOrderFront(nil)
+            app.activate(ignoringOtherApps: true)
         }
     }
 
