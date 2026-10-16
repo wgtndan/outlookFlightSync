@@ -17,7 +17,17 @@ final class CalendarAccess {
     }
 
     func requestAccess() async throws -> Bool {
-        try await store.requestFullAccessToEvents()
+        // Start the request on the main actor. Older SDK async overlays send
+        // the non-Sendable event store across an isolation boundary.
+        try await withCheckedThrowingContinuation { continuation in
+            store.requestFullAccessToEvents { granted, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: granted)
+                }
+            }
+        }
     }
 
     func calendars() -> [CalendarDescriptor] {
