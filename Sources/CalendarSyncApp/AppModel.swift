@@ -37,6 +37,7 @@ final class AppModel: ObservableObject {
     private var timer: Timer?
     private var observers: [NSObjectProtocol] = []
     private var isStarted = false
+    private var restoredDockVisibility = false
 
     var selectedRule: SyncRule? { rules.first { $0.id == selectedRuleID } }
     var automaticCount: Int { rules.filter(\.automatic).count }
@@ -59,13 +60,6 @@ final class AppModel: ObservableObject {
         if ProcessInfo.processInfo.arguments.contains("--diagnose-sync") {
             runDiagnostics()
             return
-        }
-        let savedDockVisibility = UserDefaults.standard.object(forKey: Self.showInDockKey) as? Bool ?? true
-        if NSApplication.shared.setActivationPolicy(savedDockVisibility ? .regular : .accessory) {
-            showInDock = savedDockVisibility
-        } else {
-            showInDock = NSApplication.shared.activationPolicy() == .regular
-            errorMessage = "Could not restore the Dock setting. You can try changing Show in Dock again."
         }
         timer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.runAutomatic() }
@@ -283,11 +277,29 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Called after AppKit finishes launching; SwiftUI's initial view task can
+    /// run too early for AppKit to accept a change in activation policy.
+    func restoreDockVisibility() {
+        guard !restoredDockVisibility,
+              !ProcessInfo.processInfo.arguments.contains("--diagnose-sync") else { return }
+        restoredDockVisibility = true
+        let visible = UserDefaults.standard.object(forKey: Self.showInDockKey) as? Bool ?? true
+        let app = NSApplication.shared
+        let policy: NSApplication.ActivationPolicy = visible ? .regular : .accessory
+        if app.activationPolicy() == policy || app.setActivationPolicy(policy) {
+            showInDock = visible
+        } else {
+            showInDock = app.activationPolicy() == .regular
+            errorMessage = "Could not restore the Dock setting. You can try changing Show in Dock again."
+        }
+    }
+
     func setShowInDock(_ visible: Bool) {
         guard !isDemo else { return }
         let app = NSApplication.shared
         let window = app.keyWindow ?? app.mainWindow
-        guard app.setActivationPolicy(visible ? .regular : .accessory) else {
+        let policy: NSApplication.ActivationPolicy = visible ? .regular : .accessory
+        guard app.activationPolicy() == policy || app.setActivationPolicy(policy) else {
             errorMessage = "Could not change Dock visibility. Please try again."
             return
         }
