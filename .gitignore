@@ -1,0 +1,18 @@
+.build/
+.swiftpm/
+build/
+.DS_Store
+*.xcuserstate
+xcuserdata/
+
+# Local configuration, calendar data, and signing credentials.
+.env
+.env.*
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.ics
+*.p12
+*.p8
+*.mobileprovision

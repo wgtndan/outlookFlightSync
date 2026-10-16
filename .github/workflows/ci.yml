@@ -1,0 +1,33 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Show Swift toolchain
+        run: xcrun swift --version
+      - name: Test sync logic
+        run: xcrun swift test
+      - name: Package and verify Apple Silicon and Intel previews
+        run: ./scripts/package-release.sh
+      - name: Upload verified release archives
+        uses: actions/upload-artifact@v7
+        with:
+          name: CalendarSync-macos-preview
+          path: |
+            build/release/Calendar-Sync-*.zip
+            build/release/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
