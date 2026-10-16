@@ -6,9 +6,13 @@ Copy selected events between the calendars already connected to your Mac. Keep w
 
 Calendar Sync is a native macOS menu-bar app. It uses Apple Calendar's account connections through EventKit, with no hosted service, separate calendar passwords, or Microsoft Graph app registration. **Both accounts must work in Apple Calendar; signing into them only in Outlook is insufficient.** It is a companion app, not an Outlook add-in.
 
+![Calendar Sync Summary showing rules and sync status using fictional sample data](docs/images/rule-summary.jpg)
+
+*Review calendar pairs, matching conditions, and sync status together. Screenshot uses fictional sample data.*
+
 ## Download and install
 
-**[Download v0.1.5 preview](https://github.com/wgtndan/outlookFlightSync/releases/tag/v0.1.5)** · macOS 14 or later · [MIT license](LICENSE)
+**[Download the latest preview](https://github.com/wgtndan/outlookFlightSync/releases)** · macOS 14 or later · [MIT license](LICENSE)
 
 1. Download the ZIP for your Mac:
    - **[Apple Silicon — arm64](https://github.com/wgtndan/outlookFlightSync/releases/download/v0.1.5/Calendar-Sync-v0.1.5-macos-arm64.zip)** for Macs with an Apple M-series chip.
