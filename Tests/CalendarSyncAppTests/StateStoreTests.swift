@@ -106,7 +106,7 @@ final class StateStoreTests: XCTestCase {
                 lastPayload: RuleEngine.payload(event: source, rule: rule),
                 sourceIdentityHint: source.identityHint
             )
-            let run = RunRecord(ruleName: rule.name, summary: "1 copy created", succeeded: true)
+            let run = RunRecord(ruleName: rule.name, summary: "1 copy created", succeeded: true, ruleID: rule.id)
             var state = SavedState()
             state.rules = [rule]
             state.mappings = [mapping]
@@ -126,6 +126,7 @@ final class StateStoreTests: XCTestCase {
             XCTAssertEqual(loaded.runs.first?.id, run.id)
             XCTAssertEqual(loaded.runs.first?.date, run.date)
             XCTAssertEqual(loaded.runs.first?.ruleName, run.ruleName)
+            XCTAssertEqual(loaded.runs.first?.ruleID, rule.id)
             XCTAssertEqual(loaded.runs.first?.summary, run.summary)
             XCTAssertEqual(loaded.runs.first?.succeeded, true)
             let payload = try XCTUnwrap(loaded.mappings.first?.lastPayload)

@@ -8,6 +8,8 @@ struct RunRecord: Codable, Identifiable {
     var ruleName: String
     var summary: String
     var succeeded: Bool
+    // Optional so history saved before rule identities were recorded still loads.
+    var ruleID: UUID? = nil
 }
 
 struct SavedState: Codable {

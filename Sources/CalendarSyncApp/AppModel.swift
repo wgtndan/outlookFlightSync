@@ -39,6 +39,18 @@ final class AppModel: ObservableObject {
     var selectedRule: SyncRule? { rules.first { $0.id == selectedRuleID } }
     var automaticCount: Int { rules.filter(\.automatic).count }
 
+    var ruleSummaries: [RuleSummary] {
+        rules.map { rule in
+            RuleSummary.make(
+                rule: rule, calendars: calendars, mappings: isDemo ? [] : state.mappings,
+                runs: runs, hasAccess: hasAccess, isDemo: isDemo, storageAvailable: store != nil,
+                configurationApproved: state.approvedConfigurations[rule.id.uuidString] == configurationDigest(rule),
+                pendingRecovery: pendingRecovery,
+                previewChanges: preview?.rule == rule ? preview?.changes : nil
+            )
+        }
+    }
+
     func start() {
         guard !isStarted else { return }
         isStarted = true
@@ -391,7 +403,7 @@ final class AppModel: ObservableObject {
         let message = automatic && reviewCount > 0
             ? "\(synced) \(reviewCount) removals need review."
             : synced
-        state.runs.insert(RunRecord(ruleName: preview.rule.name, summary: message, succeeded: true), at: 0)
+        state.runs.insert(RunRecord(ruleName: preview.rule.name, summary: message, succeeded: true, ruleID: preview.rule.id), at: 0)
         state.runs = Array(state.runs.prefix(100))
         try persist()
         status = message
@@ -405,7 +417,7 @@ final class AppModel: ObservableObject {
     private func recordFailure(rule: SyncRule, error: Error) {
         errorMessage = error.localizedDescription
         status = "Sync needs attention. Successful changes were saved; use a fresh preview to continue."
-        state.runs.insert(RunRecord(ruleName: rule.name, summary: error.localizedDescription, succeeded: false), at: 0)
+        state.runs.insert(RunRecord(ruleName: rule.name, summary: error.localizedDescription, succeeded: false, ruleID: rule.id), at: 0)
         state.runs = Array(state.runs.prefix(100))
         let pendingCount = (try? store?.pendingCount()) ?? 1
         pendingRecovery = pendingCount > 0

@@ -2,17 +2,17 @@
 
 <img src="Resources/AppIcon.png" width="128" alt="Calendar Sync app icon">
 
-Copy selected events between the calendars already connected to your Mac. Keep work flights in iCloud, or show family commitments as busy time on your work calendar. Preview every rule, test a single change, then opt into automatic syncing.
+Copy selected events between the calendars already connected to your Mac. Keep work flights in iCloud, or show family commitments as busy time on your work calendar. Review your rules in one Summary, preview each rule, test a single change, then opt into automatic syncing.
 
 Calendar Sync is a native macOS menu-bar app. It uses Apple Calendar's account connections through EventKit, with no hosted service, separate calendar passwords, or Microsoft Graph app registration. **Both accounts must work in Apple Calendar; signing into them only in Outlook is insufficient.** It is a companion app, not an Outlook add-in.
 
 ## Download and install
 
-**[Download v0.1.3 preview](https://github.com/wgtndan/outlookFlightSync/releases/tag/v0.1.3)** · macOS 14 or later · [MIT license](LICENSE)
+**[Download v0.1.4 preview](https://github.com/wgtndan/outlookFlightSync/releases/tag/v0.1.4)** · macOS 14 or later · [MIT license](LICENSE)
 
 1. Download the ZIP for your Mac:
-   - **[Apple Silicon — arm64](https://github.com/wgtndan/outlookFlightSync/releases/download/v0.1.3/Calendar-Sync-v0.1.3-macos-arm64.zip)** for Macs with an Apple M-series chip.
-   - **[Intel — x86_64](https://github.com/wgtndan/outlookFlightSync/releases/download/v0.1.3/Calendar-Sync-v0.1.3-macos-x86_64.zip)** for Intel Macs.
+   - **[Apple Silicon — arm64](https://github.com/wgtndan/outlookFlightSync/releases/download/v0.1.4/Calendar-Sync-v0.1.4-macos-arm64.zip)** for Macs with an Apple M-series chip.
+   - **[Intel — x86_64](https://github.com/wgtndan/outlookFlightSync/releases/download/v0.1.4/Calendar-Sync-v0.1.4-macos-x86_64.zip)** for Intel Macs.
 2. Unzip it and drag **Calendar Sync.app** into **Applications**. If you cannot install for all users, put it in the **Applications** folder inside your home folder (`~/Applications`); create that folder if needed.
 3. Open Calendar Sync from the folder where you installed it.
 4. Choose **Allow Calendar access**, then allow full access when macOS asks. Both reading source events and updating destination copies require it.
@@ -22,7 +22,7 @@ This preview is **ad-hoc signed, not Developer ID signed or notarized**. macOS m
 Each release includes `SHA256SUMS`. To check the downloaded ZIP against it, run the following from the folder containing both files and compare the matching filename's hash:
 
 ```sh
-shasum -a 256 Calendar-Sync-v0.1.3-macos-*.zip
+shasum -a 256 Calendar-Sync-v0.1.4-macos-*.zip
 cat SHA256SUMS
 ```
 
@@ -41,6 +41,14 @@ No Xcode or developer tools are needed to run the downloaded app. The Intel bina
 Automatic syncing checks every five minutes while the app runs and catches up after the Mac wakes. It only creates and updates events; removals always need a manual preview and confirmation. Editing a rule pauses automatic syncing until you review it again. Applying a single row does not approve the whole rule for automatic syncing.
 
 Add separate rules for different calendar pairs. Closing the window leaves the app running in the menu bar; reopen it from there, the Dock, or Command-Tab. Enable **Open at login** if you want it to start automatically. Nothing syncs while the app is quit or your Mac is asleep.
+
+## Review your rules
+
+**Summary** is the starting view once you have rules. Each card shows the source and destination with account names, matching conditions, copied details, date coverage, and current status. It highlights rules that need setup, Calendar access, or review, and shows the last result recorded for that rule.
+
+Search by rule, preset, calendar, or condition, or filter to **Needs attention**, **Automatic**, or **Manual**. Automatic counts and filters reflect the saved setting; a rule's status explains if syncing is currently paused. **Tracked copies** counts local mappings, including retained history, rather than querying the calendars for a live event count. Older activity recorded before version 0.1.4 appears in Recent activity instead of being assigned to a rule by name.
+
+Choose **Review rule** to open its settings, then **Test & preview** to check current matches. Summary itself does not apply changes or start syncing.
 
 ## What gets copied
 

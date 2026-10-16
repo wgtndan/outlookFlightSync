@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var selectedChangeID: String?
     @State private var showExcluded = false
     @State private var selectedTab = 0
+    @State private var showingSummary = true
 
     var body: some View {
         HStack(spacing: 0) {
@@ -20,16 +21,27 @@ struct ContentView: View {
                 header
                 Divider()
                 if model.rules.isEmpty { welcome }
+                else if showingSummary {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 22) {
+                            if model.isDemo { demoBanner }
+                            if !model.hasAccess && !model.isDemo { permissionCard }
+                            if model.pendingRecovery && !model.isDemo { info("A previous sync was interrupted. Review and apply a fresh preview before automatic syncing resumes.", icon: "arrow.clockwise.circle") }
+                            RuleSummaryView(summaries: model.ruleSummaries, isBusy: model.isBusy, reviewRule: openRule)
+                            if !visibleRuns.isEmpty { historySection }
+                        }.padding(28)
+                    }
+                }
                 else if let rule = model.selectedRule {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 22) {
                             if model.isDemo { demoBanner }
                             if !model.hasAccess && !model.isDemo { permissionCard }
-                            if model.pendingRecovery { info("A previous sync was interrupted. Review and apply a fresh preview before automatic syncing resumes.", icon: "arrow.clockwise.circle") }
+                            if model.pendingRecovery && !model.isDemo { info("A previous sync was interrupted. Review and apply a fresh preview before automatic syncing resumes.", icon: "arrow.clockwise.circle") }
                             ruleEditor(rule)
                             if let preview = model.preview, preview.rule.id == rule.id { previewSection(preview) }
                             automationSection(rule)
-                            if !model.runs.isEmpty { historySection }
+                            if !visibleRuns.isEmpty { historySection }
                         }
                         .padding(28)
                     }
@@ -52,7 +64,9 @@ struct ContentView: View {
             Button("OK", role: .cancel) { model.errorMessage = nil }
         } message: { Text(model.errorMessage ?? "") }
         .confirmationDialog("Remove this rule?", isPresented: $showingDelete, titleVisibility: .visible) {
-            Button("Remove rule", role: .destructive) { if let id = model.selectedRuleID { model.deleteRule(id) } }
+            Button("Remove rule", role: .destructive) {
+                if let id = model.selectedRuleID { model.deleteRule(id); showingSummary = true }
+            }
         } message: { Text("Automatic syncing will stop. Copies already in your calendars will remain.") }
         .confirmationDialog(selectedChangeID == nil ? "Apply all calendar changes?" : "Apply this calendar change?", isPresented: $showingApply, titleVisibility: .visible) {
             Button(selectedChangeID == nil ? "Apply all changes" : "Apply this change", role: confirmationChanges.contains(where: { $0.kind == .remove }) ? .destructive : nil) {
@@ -79,13 +93,23 @@ struct ContentView: View {
                 Image(systemName: "calendar.badge.clock").font(.title2).foregroundStyle(accent)
                 Text("Calendar Sync").font(.headline)
             }.padding(.top, 12)
+            Button { showingSummary = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.grid.2x2").frame(width: 20)
+                    Text("Summary").fontWeight(.medium)
+                    Spacer()
+                    Text("\(model.rules.count)").font(.caption).foregroundStyle(.secondary)
+                }
+                .foregroundStyle(showingSummary ? accent : Color.primary)
+                .padding(12)
+                .background(showingSummary ? accent.opacity(0.10) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+            }.buttonStyle(.plain).accessibilityLabel("Summary")
             Text("YOUR RULES").font(.system(size: 10, weight: .semibold)).tracking(1.5).foregroundStyle(.secondary)
             ScrollView {
                 VStack(spacing: 7) {
                     ForEach(model.rules) { rule in
                         Button {
-                            model.selectedRuleID = rule.id
-                            selectedTab = 0
+                            openRule(rule.id)
                         } label: {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: rule.preset == .flights ? "airplane" : rule.preset == .family ? "house" : "line.3.horizontal.decrease.circle")
@@ -96,17 +120,17 @@ struct ContentView: View {
                                 }
                                 Spacer(minLength: 0)
                             }
-                            .foregroundStyle(model.selectedRuleID == rule.id ? accent : Color.primary)
+                            .foregroundStyle(!showingSummary && model.selectedRuleID == rule.id ? accent : Color.primary)
                             .padding(12)
-                            .background(model.selectedRuleID == rule.id ? accent.opacity(0.10) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                            .background(!showingSummary && model.selectedRuleID == rule.id ? accent.opacity(0.10) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                         }.buttonStyle(.plain)
                     }
                 }
             }
             Menu {
-                Button("Flights") { model.addRule(.flights) }
-                Button("Family commitments") { model.addRule(.family) }
-                Button("Custom rule") { model.addRule(.custom) }
+                Button("Flights") { addRule(.flights) }
+                Button("Family commitments") { addRule(.family) }
+                Button("Custom rule") { addRule(.custom) }
             } label: { Label("Add rule", systemImage: "plus") }
                 .menuStyle(.borderlessButton).fixedSize().disabled(model.isBusy)
             Divider()
@@ -116,7 +140,7 @@ struct ContentView: View {
                 Toggle("Open at login", isOn: Binding(get: { model.launchAtLogin }, set: { model.setLaunchAtLogin($0) }))
                     .font(.caption).disabled(model.isDemo)
                 if !model.isDemo {
-                    Button("Try sample data") { model.enterDemo() }.font(.caption).buttonStyle(.link).disabled(model.isBusy)
+                    Button("Try sample data") { model.enterDemo(); showingSummary = true }.font(.caption).buttonStyle(.link).disabled(model.isBusy)
                 }
             }
         }
@@ -128,13 +152,13 @@ struct ContentView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 5) {
-                Text(model.selectedRule?.name ?? "Make room for what matters")
+                Text(model.rules.isEmpty ? "Make room for what matters" : showingSummary ? "Summary" : model.selectedRule?.name ?? "Your rules")
                     .font(.system(size: 24, weight: .semibold))
-                Text("Choose what crosses between your calendars.")
+                Text(showingSummary && !model.rules.isEmpty ? "Your rules, calendar connections, and recent activity." : "Choose what crosses between your calendars.")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
-            if model.selectedRule != nil {
+            if model.selectedRule != nil && !showingSummary {
                 Button { showingDelete = true } label: { Image(systemName: "trash") }
                     .buttonStyle(.borderless).help("Remove rule; keep existing copies").disabled(model.isBusy)
             }
@@ -167,7 +191,7 @@ struct ContentView: View {
             Text(preset.title).font(.headline)
             Text(description).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            Button("Set up \(preset == .flights ? "flights" : "family time")") { model.addRule(preset) }
+            Button("Set up \(preset == .flights ? "flights" : "family time")") { addRule(preset) }
                 .buttonStyle(.bordered)
         }.padding(20).frame(maxWidth: .infinity, minHeight: 195, alignment: .topLeading).background(cardBackground)
     }
@@ -194,7 +218,7 @@ struct ContentView: View {
         HStack {
             Label("Sample data · your calendars are untouched", systemImage: "sparkles").font(.subheadline)
             Spacer()
-            Button("Use my calendars") { model.exitDemo() }.buttonStyle(.bordered)
+            Button("Use my calendars") { model.exitDemo(); showingSummary = true }.buttonStyle(.bordered)
         }.padding(14).background(accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 10))
     }
 
@@ -403,10 +427,14 @@ struct ContentView: View {
         }.padding(20).background(cardBackground)
     }
 
+    private var visibleRuns: [RunRecord] {
+        showingSummary ? model.runs : model.runs.filter { $0.ruleID != nil && $0.ruleID == model.selectedRuleID }
+    }
+
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Recent activity").font(.headline)
-            ForEach(model.runs.prefix(5)) { run in
+            Text(showingSummary ? "Recent activity" : "Recent activity for this rule").font(.headline)
+            ForEach(visibleRuns.prefix(5)) { run in
                 HStack(alignment: .top) {
                     Image(systemName: run.succeeded ? "checkmark.circle" : "exclamationmark.circle").foregroundStyle(run.succeeded ? accent : .orange)
                     VStack(alignment: .leading, spacing: 3) {
@@ -423,6 +451,18 @@ struct ContentView: View {
     private var cardBackground: some View {
         RoundedRectangle(cornerRadius: 13).fill(Color(nsColor: .controlBackgroundColor))
             .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Color.primary.opacity(0.07)))
+    }
+
+    private func openRule(_ id: UUID) {
+        model.selectedRuleID = id
+        selectedTab = 0
+        showingSummary = false
+    }
+
+    private func addRule(_ preset: RulePreset) {
+        model.addRule(preset)
+        selectedTab = 0
+        showingSummary = false
     }
 
     private func sectionLabel(_ number: String, _ title: String) -> some View {
