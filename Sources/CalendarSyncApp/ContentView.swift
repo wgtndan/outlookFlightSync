@@ -399,7 +399,7 @@ struct ContentView: View {
                 }
             }
             if preview.changes.contains(where: { $0.kind == .remove }) {
-                info("Removals always need your review. A missing source can also mean Apple Calendar has not finished syncing; confirm it is up to date before applying removals.", icon: "exclamationmark.circle")
+                info("A missing source can also mean Apple Calendar has not finished syncing; confirm it is up to date before enabling automatic deletions or applying removals.", icon: "exclamationmark.circle")
             }
             if preview.changes.contains(where: { $0.kind == .conflict }) {
                 info("There are conflicting or unidentifiable copies. This rule is paused until they are resolved.", icon: "exclamationmark.triangle")
@@ -429,7 +429,17 @@ struct ContentView: View {
                     .toggleStyle(.switch).labelsHidden()
                     .disabled(model.isBusy || (!rule.automatic && !model.canEnableAutomatic(rule)))
             }
-            Text(model.canEnableAutomatic(rule) ? "Automatic runs create and update copies. Removals remain in the preview for your review." : "Apply or confirm a full preview first to enable automatic syncing. Applying one change does not enable it. Changing this rule pauses it until you review it again.")
+            Toggle("Sync cancellations and deletions", isOn: Binding(
+                get: { rule.syncDeletions == true },
+                set: { value in
+                    var changed = rule
+                    changed.syncDeletions = value ? true : nil
+                    model.updateRule(changed)
+                }))
+                .disabled(model.isBusy || model.isDemo)
+            Text("Remove this rule’s owned copies when the source is cancelled or deleted within the sync date range. Apple Calendar must be fully synced. Other removals still need review.")
+                .font(.caption).foregroundStyle(.secondary)
+            Text(model.canEnableAutomatic(rule) ? (rule.syncDeletions == true ? "Automatic runs also remove cancelled and deleted source copies." : "Automatic runs create and update copies. Removals remain in the preview for your review.") : "Apply or confirm a full preview first to enable automatic syncing. Applying one change does not enable it. Changing this rule pauses it until you review it again.")
                 .font(.caption).foregroundStyle(.secondary)
         }.padding(20).background(cardBackground)
     }

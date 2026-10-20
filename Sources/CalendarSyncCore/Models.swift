@@ -43,6 +43,8 @@ public struct SyncRule: Codable, Identifiable, Equatable, Sendable {
     public var conditions: [RuleCondition]
     public var matchMode: MatchMode
     public var automatic: Bool
+    /// Nil preserves manual removal review for rules saved before this option existed.
+    public var syncDeletions: Bool?
     public var pastDays: Int
     public var futureDays: Int
     public init(id: UUID = UUID(), name: String, preset: RulePreset, sourceCalendarID: String = "", destinationCalendarID: String = "", conditions: [RuleCondition] = [], matchMode: MatchMode = .all, automatic: Bool = false, pastDays: Int = 7, futureDays: Int = 180) {

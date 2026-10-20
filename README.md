@@ -144,3 +144,7 @@ The app icon's vector source is `scripts/generate-app-icon.swift`; regenerate it
 ## Contributing
 
 [Open an issue](https://github.com/wgtndan/outlookFlightSync/issues) for bugs or ideas, or send a pull request. Include your macOS version, app version and a minimal example using fictional events. Run `swift test` before submitting a code change. The project is available under the [MIT license](LICENSE).
+
+### Sync flight cancellations and deletions
+
+In a rule’s **Keep it in sync** section, enable **Sync cancellations and deletions**, test and review a fresh preview, then enable automatic syncing again. This removes owned destination copies when their source is cancelled or absent within the configured date range, and creates matching replacement flights. Existing rules keep manual removal review until you opt in. Other events and out-of-range history are preserved. Apple Calendar must finish syncing first: EventKit cannot distinguish a server deletion from a temporarily incomplete local calendar. Events that only stop matching still require manual review.

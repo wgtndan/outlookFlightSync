@@ -91,7 +91,7 @@ struct RuleSummary: Identifiable {
             detail = "Manual syncing is available. Review and apply or confirm a full preview before enabling automatic syncing."
         } else if rule.automatic && !isDemo {
             status = .automatic
-            detail = "Checks every 5 minutes while the app runs, and after your Mac wakes. Removals need manual review."
+            detail = rule.syncDeletions == true ? "Checks every 5 minutes and after wake. Source cancellations and deletions remove owned copies automatically." : "Checks every 5 minutes while the app runs, and after your Mac wakes. Removals need manual review."
         } else {
             status = .manual
             detail = isDemo ? "Sample rule. Test a preview without changing real calendars."

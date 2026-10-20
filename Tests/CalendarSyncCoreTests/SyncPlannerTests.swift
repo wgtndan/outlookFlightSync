@@ -3,6 +3,37 @@ import XCTest
 @testable import CalendarSyncCore
 
 final class SyncPlannerTests: XCTestCase {
+    func testDeletionOptInHandlesRebookingAndCancellation() throws {
+        var rule = Fixtures.rule()
+        let old = Fixtures.source()
+        let copy = Fixtures.destination(source: old, rule: rule)
+        let mapping = Fixtures.mapping(source: old, destination: copy, rule: rule)
+        func plan(_ events: [EventSnapshot]) -> [PlannedChange] {
+            SyncPlanner.plan(rule: rule, sourceEvents: events, destinationEvents: [copy], mappings: [mapping], window: Fixtures.window)
+        }
+        XCTAssertTrue(try XCTUnwrap(plan([]).first).requiresReview)
+        rule.syncDeletions = true
+        let replacement = Fixtures.source(key: "replacement", id: "replacement-id")
+        let rebooked = plan([replacement])
+        XCTAssertEqual(Set(rebooked.map(\.kind)), Set([.remove, .create]))
+        XCTAssertFalse(try XCTUnwrap(rebooked.first { $0.kind == .remove }).requiresReview)
+        var cancelled = old
+        cancelled.isCancelled = true
+        XCTAssertEqual(plan([cancelled]).first?.kind, .remove)
+        XCTAssertFalse(try XCTUnwrap(plan([cancelled]).first).requiresReview)
+        var renamed = old
+        renamed.title = "No longer matches"
+        XCTAssertTrue(try XCTUnwrap(plan([renamed]).first).requiresReview)
+        let unowned = Fixtures.source(key: "unrelated", id: "unrelated")
+        XCTAssertTrue(SyncPlanner.plan(rule: rule, sourceEvents: [], destinationEvents: [unowned], mappings: [], window: Fixtures.window).isEmpty)
+    }
+
+    func testLegacyRulesDecodeWithManualDeletionReview() throws {
+        let data = try JSONEncoder().encode(Fixtures.rule())
+        let restored = try JSONDecoder().decode(SyncRule.self, from: data)
+        XCTAssertNil(restored.syncDeletions)
+    }
+
     func testFirstSyncCreatesAndRepeatedSyncIsIdempotent() throws {
         let rule = Fixtures.rule()
         let source = Fixtures.source()
