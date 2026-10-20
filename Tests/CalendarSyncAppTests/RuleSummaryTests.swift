@@ -35,7 +35,7 @@ final class RuleSummaryTests: XCTestCase {
 
         let unapproved = makeSummary(configured, approved: false)
         XCTAssertEqual(unapproved.status, .needsReview)
-        XCTAssertTrue(unapproved.statusDetail.contains("Manual syncing is available"))
+        XCTAssertTrue(unapproved.statusDetail.contains("Turn it on to validate"))
         XCTAssertTrue(unapproved.automaticConfigured)
         configured.automatic = false
         XCTAssertEqual(makeSummary(configured, approved: false).status, .needsReview)

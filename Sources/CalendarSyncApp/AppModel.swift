@@ -199,9 +199,28 @@ final class AppModel: ObservableObject {
 
     func setAutomatic(_ enabled: Bool, ruleID: UUID) {
         guard let index = rules.firstIndex(where: { $0.id == ruleID }), !isBusy else { return }
-        guard !enabled || canEnableAutomatic(rules[index]) else { return }
+        guard !isDemo else { return }
+        guard store != nil else {
+            errorMessage = "Local history is unavailable. Restart the app before enabling sync."
+            return
+        }
+        if enabled {
+            do {
+                let rule = rules[index]
+                let fresh = try buildPreview(rule, window: makeWindow(rule))
+                preview = fresh
+                if let conflict = fresh.changes.first(where: { $0.kind == .conflict }) {
+                    throw AppError.message(conflict.reason)
+                }
+                state.approvedConfigurations[rule.id.uuidString] = configurationDigest(rule)
+            } catch {
+                errorMessage = "Could not enable sync: \(error.localizedDescription)"
+                return
+            }
+        }
         rules[index].automatic = enabled
         persistRules()
+        if enabled { Task { await runAutomatic() } }
     }
 
     func pauseAll() {
@@ -472,6 +491,7 @@ final class AppModel: ObservableObject {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         guard var data = try? encoder.encode(copy) else { return "invalid" }
+        data.insert(contentsOf: Data("full-sync-v3\n".utf8), at: 0)
         // Version 2 includes notes for flights/custom rules. Old approvals
         // must not silently authorize copying this additional content.
         if copy.preset != .family {

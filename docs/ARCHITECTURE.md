@@ -20,9 +20,9 @@ Source events owned by this app are excluded from matching. Writes target the ru
 
 Flight and custom payloads include optional notes text. Missing notes in older saved payloads decode as nil; reconciliation proposes updates for existing copies whose notes differ. Family payloads always use nil notes. Approval digests include the expanded copy-policy version for flight/custom rules, so a prior approval to omit notes cannot silently enable copying them automatically.
 
-A successful confirmation of the full preview establishes approval for the current rule configuration. A single-row apply revalidates the complete preview, writes only the selected create/update/removal, and acknowledges only that source's pending operations. It does not approve the whole rule for automatic syncing. Conflicts anywhere in the rule still block both full and single-row applies. Automatic creates and updates are opt-in and run approximately every five minutes while the app is running and the Mac can execute them. Changing the rule invalidates the approval. The default reconciliation window is seven days in the past and 180 days ahead. Recurring events are materialized as separate occurrences within that window.
+A successful confirmation of the full preview establishes approval for the current rule configuration. A single-row apply revalidates the complete preview, writes only the selected create/update/removal, and acknowledges only that source's pending operations. It does not approve the whole rule for automatic syncing. Conflicts anywhere in the rule still block both full and single-row applies. Automatic full reconciliation is opt-in and run approximately every five minutes while the app is running and the Mac can execute them. Changing the rule invalidates the approval. Turning Automatic on validates a fresh plan, rejects conflicts, approves the current configuration and starts a run. The default reconciliation window is seven days in the past and 180 days ahead. Recurring events are materialized as separate occurrences within that window.
 
-Removals require an explicit manual preview and Apply confirmation showing the removal count and destination. Disappearance from a local cache never triggers automatic deletion. Before applying, the coordinator rebuilds the plan, and the EventKit adapter rechecks the source and destination ownership. Automatic sync does not remove events. Conflicting or uncertain ownership is surfaced for review.
+Automatic sync includes owned-copy removals for deleted, cancelled, or nonmatching sources inside the active window. Before applying, the coordinator rebuilds the plan and the EventKit adapter rechecks source identity and destination ownership. Ambiguous identities and unresolved recurring sources block writes. EventKit local-cache absence cannot prove a remote deletion; Apple Calendar must be fully synced. Older approval digests are invalidated for this expanded policy.
 
 ## Summary and rule review
 
@@ -59,7 +59,7 @@ Before enabling a real rule:
 1. Grant Calendar access in the app, select disposable source/destination calendars, and verify the account labels and write capability.
 2. Create a fictional flight and a fictional family event; preview and apply each rule. Confirm the copies reach the provider and appear in Outlook, and that the ownership URL survives synchronization.
 3. Change a source time, restart the app, and confirm exactly one copy updates. Check a recurring event, a moved occurrence, an all-day event, and a flight crossing time zones.
-4. Remove or unmatch a source and confirm the proposed removal is shown for review, while automatic sync leaves the copy untouched.
+4. Remove or unmatch a source and confirm the proposed removal is shown for review, and automatic sync removes only the owned copy.
 5. Enable automatic syncing, then exercise sleep/wake, temporary network loss, and revoked Calendar access.
 
 Broader live provider testing, Developer ID signing and notarization are the next distribution milestones. No hosted sync service is required for this roadmap.

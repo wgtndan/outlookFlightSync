@@ -88,10 +88,10 @@ struct RuleSummary: Identifiable {
             detail = "The last sync attempt reported a problem. Open the rule and test again to check its current state."
         } else if !isDemo && !configurationApproved {
             status = .needsReview
-            detail = "Manual syncing is available. Review and apply or confirm a full preview before enabling automatic syncing."
+            detail = "Automatic syncing is off. Turn it on to validate this rule and sync creates, updates, and deletions."
         } else if rule.automatic && !isDemo {
             status = .automatic
-            detail = rule.syncDeletions == true ? "Checks every 5 minutes and after wake. Source cancellations and deletions remove owned copies automatically." : "Checks every 5 minutes while the app runs, and after your Mac wakes. Removals need manual review."
+            detail = "Checks every 5 minutes and after wake. Syncs creates, updates, and source deletions for owned copies."
         } else {
             status = .manual
             detail = isDemo ? "Sample rule. Test a preview without changing real calendars."

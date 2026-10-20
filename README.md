@@ -42,7 +42,7 @@ No Xcode or developer tools are needed to run the downloaded app. The Intel bina
 6. To try one event, choose **Apply this change** on its row and confirm. The remaining changes stay in the refreshed preview.
 7. Choose **Apply all changes**, or **Confirm this preview** when nothing needs changing, to approve the complete rule. You can then enable **Keep it in sync**.
 
-Automatic syncing checks every five minutes while the app runs and catches up after the Mac wakes. It only creates and updates events; removals always need a manual preview and confirmation. Editing a rule pauses automatic syncing until you review it again. Applying a single row does not approve the whole rule for automatic syncing.
+Automatic syncing checks every five minutes while the app runs and catches up after the Mac wakes. It creates and updates matching events and removes owned copies when sources are deleted, cancelled, or no longer match. Turn on Automatic to validate the rule and begin syncing. Editing a rule pauses it until you turn it on again.
 
 Add separate rules for different calendar pairs. Closing the window leaves the app running in the menu bar. Enable **Open at login** in the sidebar if you want it to start automatically. Nothing syncs while the app is quit or your Mac is asleep.
 
@@ -100,7 +100,7 @@ Please use fictional events in bug reports. Do not upload a real state database,
 - **Exchange connection stops working:** Apple's October 2026 guidance says Exchange Online EWS changes may require an administrator to allow Apple Internet Accounts. Contact your Exchange administrator if the account stops signing in or syncing in Apple Calendar. Calendar Sync cannot bypass that account policy. See [Apple's Exchange sign-in guidance](https://support.apple.com/en-us/149092).
 - **Old interrupted copy:** version 0.1.1 fixed the first prototype's post-save verification failure. Keep your existing rule and run **Test & preview**. The app can recover a matching marked copy without creating another event; apply the reviewed preview to finish recovery.
 - **Rescheduled event needs review:** some older source identities include the event's start time. If rescheduling changes that identity, the app pauses for review instead of creating a duplicate or deleting the old copy. Fully automatic migration of these identities is not implemented yet.
-- **A removal is waiting:** this is intentional. Automatic sync never removes copies; review and apply removals manually.
+- **Sync cannot start:** read the error shown when enabling Automatic. Calendar access, valid calendar selections, and unambiguous event identities are required.
 
 This is an early preview. Test a rule with **Apply this change** before enabling automatic syncing. For implementation details, see [architecture and limits](docs/ARCHITECTURE.md).
 
@@ -147,4 +147,4 @@ The app icon's vector source is `scripts/generate-app-icon.swift`; regenerate it
 
 ### Sync flight cancellations and deletions
 
-In a rule’s **Keep it in sync** section, enable **Sync cancellations and deletions**, test and review a fresh preview, then enable automatic syncing again. This removes owned destination copies when their source is cancelled or absent within the configured date range, and creates matching replacement flights. Existing rules keep manual removal review until you opt in. Other events and out-of-range history are preserved. Apple Calendar must finish syncing first: EventKit cannot distinguish a server deletion from a temporarily incomplete local calendar. Events that only stop matching still require manual review.
+In a rule’s **Keep it in sync** section, turn on **Automatic**. Sync includes creates, updates, cancellations, deletions, and events that stop matching. Only owned copies within the configured date range are removed. Apple Calendar must finish syncing first: EventKit cannot distinguish a server deletion from a temporarily incomplete local calendar.

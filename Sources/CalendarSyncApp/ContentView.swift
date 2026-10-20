@@ -304,7 +304,7 @@ struct ContentView: View {
                 Button { Task { await model.makePreview() } } label: { Label("Test & preview", systemImage: "play.circle") }
                     .buttonStyle(.borderedProminent).controlSize(.large)
                     .disabled(model.isBusy || (!model.hasAccess && !model.isDemo))
-                Text("No calendar changes until you apply.").font(.caption).foregroundStyle(.secondary)
+                Text("Testing does not change calendars.").font(.caption).foregroundStyle(.secondary)
                 Spacer()
             }
         }.padding(22).background(cardBackground).disabled(model.isBusy)
@@ -399,7 +399,7 @@ struct ContentView: View {
                 }
             }
             if preview.changes.contains(where: { $0.kind == .remove }) {
-                info("A missing source can also mean Apple Calendar has not finished syncing; confirm it is up to date before enabling automatic deletions or applying removals.", icon: "exclamationmark.circle")
+                info("A missing source can also mean Apple Calendar has not finished syncing; confirm it is up to date before enabling sync or applying removals.", icon: "exclamationmark.circle")
             }
             if preview.changes.contains(where: { $0.kind == .conflict }) {
                 info("There are conflicting or unidentifiable copies. This rule is paused until they are resolved.", icon: "exclamationmark.triangle")
@@ -427,19 +427,11 @@ struct ContentView: View {
                 Spacer()
                 Toggle("Automatic", isOn: Binding(get: { rule.automatic }, set: { model.setAutomatic($0, ruleID: rule.id) }))
                     .toggleStyle(.switch).labelsHidden()
-                    .disabled(model.isBusy || (!rule.automatic && !model.canEnableAutomatic(rule)))
+                    .disabled(model.isBusy || model.isDemo)
             }
-            Toggle("Sync cancellations and deletions", isOn: Binding(
-                get: { rule.syncDeletions == true },
-                set: { value in
-                    var changed = rule
-                    changed.syncDeletions = value ? true : nil
-                    model.updateRule(changed)
-                }))
-                .disabled(model.isBusy || model.isDemo)
-            Text("Remove this rule’s owned copies when the source is cancelled or deleted within the sync date range. Apple Calendar must be fully synced. Other removals still need review.")
+            Text("Sync creates and updates matching events, and removes owned copies when their source is deleted, cancelled, or no longer matches. Only events within the sync date range are affected.")
                 .font(.caption).foregroundStyle(.secondary)
-            Text(model.canEnableAutomatic(rule) ? (rule.syncDeletions == true ? "Automatic runs also remove cancelled and deleted source copies." : "Automatic runs create and update copies. Removals remain in the preview for your review.") : "Apply or confirm a full preview first to enable automatic syncing. Applying one change does not enable it. Changing this rule pauses it until you review it again.")
+            Text("Turn on Automatic to validate the rule and start syncing. Editing the rule pauses it; turn it on again when ready.")
                 .font(.caption).foregroundStyle(.secondary)
         }.padding(20).background(cardBackground)
     }

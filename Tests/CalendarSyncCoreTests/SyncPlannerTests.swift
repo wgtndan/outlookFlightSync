@@ -3,16 +3,15 @@ import XCTest
 @testable import CalendarSyncCore
 
 final class SyncPlannerTests: XCTestCase {
-    func testDeletionOptInHandlesRebookingAndCancellation() throws {
-        var rule = Fixtures.rule()
+    func testSyncHandlesRebookingAndCancellation() throws {
+        let rule = Fixtures.rule()
         let old = Fixtures.source()
         let copy = Fixtures.destination(source: old, rule: rule)
         let mapping = Fixtures.mapping(source: old, destination: copy, rule: rule)
         func plan(_ events: [EventSnapshot]) -> [PlannedChange] {
             SyncPlanner.plan(rule: rule, sourceEvents: events, destinationEvents: [copy], mappings: [mapping], window: Fixtures.window)
         }
-        XCTAssertTrue(try XCTUnwrap(plan([]).first).requiresReview)
-        rule.syncDeletions = true
+        XCTAssertFalse(try XCTUnwrap(plan([]).first).requiresReview)
         let replacement = Fixtures.source(key: "replacement", id: "replacement-id")
         let rebooked = plan([replacement])
         XCTAssertEqual(Set(rebooked.map(\.kind)), Set([.remove, .create]))
@@ -23,15 +22,9 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertFalse(try XCTUnwrap(plan([cancelled]).first).requiresReview)
         var renamed = old
         renamed.title = "No longer matches"
-        XCTAssertTrue(try XCTUnwrap(plan([renamed]).first).requiresReview)
+        XCTAssertFalse(try XCTUnwrap(plan([renamed]).first).requiresReview)
         let unowned = Fixtures.source(key: "unrelated", id: "unrelated")
         XCTAssertTrue(SyncPlanner.plan(rule: rule, sourceEvents: [], destinationEvents: [unowned], mappings: [], window: Fixtures.window).isEmpty)
-    }
-
-    func testLegacyRulesDecodeWithManualDeletionReview() throws {
-        let data = try JSONEncoder().encode(Fixtures.rule())
-        let restored = try JSONDecoder().decode(SyncRule.self, from: data)
-        XCTAssertNil(restored.syncDeletions)
     }
 
     func testFirstSyncCreatesAndRepeatedSyncIsIdempotent() throws {
@@ -188,7 +181,7 @@ final class SyncPlannerTests: XCTestCase {
         XCTAssertEqual(SyncPlanner.plan(rule: rule, sourceEvents: [source], destinationEvents: [destination], mappings: [mapping], window: Fixtures.window).map(\.kind), [.conflict])
     }
 
-    func testCancelledAndNoLongerMatchingSourcesRequireReviewedRemovalWithLastPayload() {
+    func testCancelledAndNoLongerMatchingSourcesRemoveWithLastPayload() {
         let rule = Fixtures.rule()
         let original = Fixtures.source()
         let destination = Fixtures.destination(source: original, rule: rule)
@@ -199,19 +192,19 @@ final class SyncPlannerTests: XCTestCase {
         for source in [cancelled, unmatched, owned] {
             let changes = SyncPlanner.plan(rule: rule, sourceEvents: [source], destinationEvents: [destination], mappings: [mapping], window: Fixtures.window)
             XCTAssertEqual(changes.map(\.kind), [.remove])
-            XCTAssertEqual(changes.first?.requiresReview, true)
+            XCTAssertEqual(changes.first?.requiresReview, false)
             XCTAssertEqual(changes.first?.payload, mapping.lastPayload)
         }
     }
 
-    func testMissingSourceInsidePreviousWindowRequiresReviewButHistoryIsPreserved() {
+    func testMissingSourceInsidePreviousWindowIsRemovedButHistoryIsPreserved() {
         let rule = Fixtures.rule()
         var source = Fixtures.source()
         let destination = Fixtures.destination(source: source, rule: rule)
         var mapping = Fixtures.mapping(source: source, destination: destination, rule: rule)
         let changes = SyncPlanner.plan(rule: rule, sourceEvents: [], destinationEvents: [destination], mappings: [mapping], window: Fixtures.window)
         XCTAssertEqual(changes.map(\.kind), [.remove])
-        XCTAssertEqual(changes.first?.requiresReview, true)
+        XCTAssertEqual(changes.first?.requiresReview, false)
         source.start = Fixtures.date("2026-09-01T00:00:00Z")
         source.end = Fixtures.date("2026-09-01T01:00:00Z")
         mapping.lastPayload = RuleEngine.payload(event: source, rule: rule)

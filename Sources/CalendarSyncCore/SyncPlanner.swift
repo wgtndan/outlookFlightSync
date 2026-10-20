@@ -112,7 +112,7 @@ public enum SyncPlanner {
                 if !match.matches {
                     if let destination {
                         changes.append(removal(rule: rule, key: key, sourceID: source.id, destination: destination,
-                                               lastPayload: mapping?.lastPayload, reason: match.reason, allowAutomatic: source.isCancelled))
+                                               lastPayload: mapping?.lastPayload, reason: match.reason))
                     }
                     continue
                 }
@@ -134,17 +134,17 @@ public enum SyncPlanner {
                 guard overlaps(start: lastPayload.start, end: lastPayload.end, window: window) else { continue }
                 changes.append(removal(rule: rule, key: key, sourceID: mapping?.sourceEventID ?? "",
                                        destination: destination, lastPayload: lastPayload,
-                                       reason: "The source was absent from the completed read. Remove this owned copy.", allowAutomatic: true))
+                                       reason: "The source was absent from the completed read. Remove this owned copy."))
             }
         }
         return changes
     }
 
     private static func removal(rule: SyncRule, key: String, sourceID: String, destination: EventSnapshot,
-                                lastPayload: CopyPayload?, reason: String, allowAutomatic: Bool = false) -> PlannedChange {
+                                lastPayload: CopyPayload?, reason: String) -> PlannedChange {
         PlannedChange(ruleID: rule.id, sourceKey: key, sourceEventID: sourceID, destinationEventID: destination.id,
                       kind: .remove, payload: lastPayload ?? destinationPayload(destination),
-                      reason: reason, requiresReview: !(allowAutomatic && rule.syncDeletions == true))
+                      reason: reason, requiresReview: false)
     }
 
     private static func destinationPayload(_ event: EventSnapshot) -> CopyPayload {
